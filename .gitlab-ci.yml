@@ -1,0 +1,21 @@
+stages:
+  - build
+
+build:web:general:
+  stage: build
+  tags:
+    - shell
+  before_script:
+    - export RELEASE_VERSION=anty-frontend-$(date +%Y-%m-%d)-$CI_COMMIT_SHORT_SHA
+    - export URL=$RELEASE_VERSION.surge.sh
+  script:
+    - yarn
+    - yarn vue-cli-service build
+    - surge ./dist $URL
+    - "/opt/homebrew/bin/wget \
+        --method POST \
+        --timeout=0 \
+        --header \"Authorization: Bearer $ANTY_API_AUTOMATION_TOKEN\" \
+        --header 'Content-Type: application/json' \
+        --body-data \"{\\\"url\\\": \\\"https://$URL\\\"}\" \
+        \"$ANTY_API_UPLOAD_BRANCH_LINK$CI_COMMIT_REF_SLUG\""
